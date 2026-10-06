@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multas del equipo</title>
+  <style>
+    :root { color-scheme: light; --navy:#172554; --blue:#2563eb; --bg:#f1f5f9; --line:#dbe3ef; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,Segoe UI,sans-serif; color:#172033; background:var(--bg); }
+    main { max-width:1000px; margin:32px auto; padding:0 18px; }
+    header { background:linear-gradient(120deg,#172554,#1d4ed8); color:white; padding:26px; border-radius:16px; box-shadow:0 8px 24px #17255422; }
+    h1 { margin:0 0 6px; font-size:clamp(1.5rem,4vw,2rem); }
+    header p { margin:0; opacity:.88; }
+    .bar { display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; margin:20px 0 14px; }
+    .datebox,.summary,.panel { background:white; border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+    .summary { font-weight:700; }
+    .summary strong { color:var(--blue); font-size:1.2rem; }
+    input,select,button { font:inherit; }
+    input[type=date] { border:0; color:inherit; margin-left:8px; }
+    .panel { padding:0; }
+    table { width:100%; border-collapse:collapse; }
+    th,td { padding:13px 14px; text-align:left; border-bottom:1px solid #edf1f6; }
+    th { color:#526078; font-size:.83rem; background:#f8fafc; }
+    tr:last-child td { border-bottom:0; }
+    .player { font-weight:650; }
+    select { width:100%; padding:8px 9px; border:1px solid var(--line); border-radius:8px; background:white; }
+    .fine { color:#334155; font-variant-numeric:tabular-nums; font-weight:650; white-space:nowrap; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; margin:16px 0; }
+    button { border:0; border-radius:9px; padding:10px 15px; font-weight:650; cursor:pointer; }
+    button:focus-visible,select:focus-visible,input:focus-visible { outline:3px solid #93c5fd; outline-offset:2px; }
+    .primary { color:white; background:var(--blue); }
+    .secondary { color:#1e293b; background:#e2e8f0; }
+    .danger { color:#9f1239; background:#ffe4e6; }
+    .note { font-size:.9rem; color:#64748b; line-height:1.5; }
+    .syncbox { margin:14px 0; padding:16px; background:#fff; border:1px solid var(--line); border-radius:12px; }
+    .syncbox h2 { margin:0 0 8px; font-size:1.1rem; }
+    .syncbox p { margin:6px 0 12px; color:#64748b; font-size:.9rem; line-height:1.5; }
+    .syncbox input { display:block; width:100%; margin:8px 0; padding:11px; border:1px solid var(--line); border-radius:8px; }
+    .syncbox button { color:white; background:#16803c; }
+    .auth { position:fixed; inset:0; z-index:10; display:grid; place-items:center; padding:18px; background:#0f172acc; }
+    .auth[hidden] { display:none !important; }
+    .auth-card { width:min(100%,420px); padding:23px; border-radius:16px; background:#fff; box-shadow:0 20px 60px #0004; }
+    .auth-card h2 { margin:0 0 7px; }
+    .auth-card p { margin:0 0 15px; color:#64748b; line-height:1.5; }
+    .auth-card input { display:block; width:100%; margin:10px 0; padding:12px; border:1px solid var(--line); border-radius:8px; }
+    .auth-actions { display:grid; gap:9px; margin-top:12px; }
+    .auth-actions button { min-height:46px; color:white; background:var(--blue); }
+    .auth-actions .secondary { color:#1e293b; background:#e2e8f0; }
+    .auth-error { min-height:1.4em; color:#be123c !important; font-size:.9rem; }
+    body.readonly #saveBtn, body.readonly #clearBtn, body.readonly #syncUrl, body.readonly #syncBtn { display:none; }
+    body.readonly select, body.readonly input[type=date], body.readonly #exportBtn { pointer-events:none; opacity:.7; }
+    @media(max-width:800px) {
+      main { margin:12px auto; padding:0 12px; }
+      header { padding:18px; border-radius:13px; }
+      header p { font-size:.92rem; line-height:1.45; }
+      .bar { gap:9px; margin:12px 0; }
+      .datebox,.summary { width:100%; padding:12px; }
+      .datebox { display:flex; align-items:center; justify-content:space-between; gap:6px; }
+      input[type=date] { margin:0; min-width:0; }
+      .summary strong { font-size:1.05rem; }
+      .panel { background:transparent; border:0; overflow:visible; }
+      table,tbody { display:block; width:100%; }
+      thead { display:none; }
+      tbody { display:grid; gap:10px; }
+      tbody tr { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px 8px; padding:13px; background:white; border:1px solid var(--line); border-radius:12px; box-shadow:0 2px 6px #17255408; }
+      tbody td { display:block; min-width:0; padding:0; border:0; }
+      tbody td:first-child { grid-column:1 / -1; font-size:1.05rem; }
+      tbody td:nth-child(2) { grid-column:1 / -1; }
+      tbody td:nth-child(3) { align-self:center; color:#64748b; font-size:.9rem; }
+      tbody td:nth-child(4) { align-self:center; text-align:right; }
+      select { min-height:44px; padding:9px; font-size:16px; }
+      input,button { font-size:16px; }
+      input[type=date] { max-width:58%; }
+      #detail-\${i} input { max-width:100%; }
+      .actions { display:grid; grid-template-columns:1fr; gap:8px; margin:12px 0; }
+      button { min-height:46px; }
+      .note { font-size:.82rem; }
+      .syncbox { padding:13px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Multas del equipo</h1>
+      <p>Registra los retrasos y la equipación que falta. Los importes se guardan en este dispositivo.</p>
+    </header>
+
+    <section class="bar" aria-label="Fecha y total">
+      <div class="datebox"><label for="trainingDate">Entrenamiento:</label><input id="trainingDate" type="date"></div>
+      <div class="summary">Total acumulado: <strong id="grandTotal">0,00 €</strong></div>
+    </section>
+
+    <div class="panel">
+      <table>
+        <thead><tr><th>Jugador</th><th>Multa de hoy</th><th>Detalle</th><th>Total adeudado</th></tr></thead>
+        <tbody id="players"></tbody>
+      </table>
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="saveBtn">Guardar entrenamiento</button>
+      <button class="secondary" id="exportBtn">Descargar Excel (CSV)</button>
+      <button class="danger" id="clearBtn">Borrar todos los datos</button>
+    </div>
+    <section class="syncbox">
+      <h2>Google Sheets</h2>
+      <p>Después de configurar Google Apps Script siguiendo la guía, pega aquí la URL publicada (termina en <code>/exec</code>). Las multas nuevas se enviarán a tu hoja al guardar el entrenamiento.</p>
+      <input id="syncUrl" type="url" placeholder="URL de la aplicación web de Apps Script" autocomplete="url">
+      <button id="syncBtn" type="button">Conectar y sincronizar</button>
+      <p id="syncStatus" role="status" aria-live="polite"></p>
+    </section>
+    <p class="note">Tarifas: retraso de 0–5 min = 0,20 €, de 5–15 min = 0,35 €, más de 15 min = 0,50 €; sin camiseta = 0,50 €; sin equipación = 5,00 €. En “Otro” puedes introducir el importe. El archivo CSV se abre con Excel. Separa los datos por entrenamiento y por jugador.</p>
+  </main>
+
+  <section class="auth" id="authScreen" aria-label="Acceso">
+    <div class="auth-card">
+      <h2>Acceso al equipo</h2>
+      <p>Los capitanes pueden registrar multas. Los jugadores pueden consultar el panel.</p>
+      <input id="captainPassword" type="password" placeholder="Contraseña de capitán" autocomplete="current-password" aria-label="Contraseña de capitán">
+      <div class="auth-actions">
+        <button id="captainBtn" type="button">Entrar como capitán</button>
+        <button id="playerBtn" class="secondary" type="button">Entrar como jugador</button>
+      </div>
+      <p class="auth-error" id="authError" role="alert"></p>
+    </div>
+  </section>
+
+  <script>
+    // WhatsApp puede abrir HTML dentro de un visor limitado. La opción
+    // de abrir en Safari/Chrome está disponible en el menú Compartir.
+    // Jugadores y entrenadores del equipo.
+    const playerNames = ['Gago', 'David Nava', 'Enol', 'Alberto', 'Garmon', 'Blankito', 'Oscar Asobal', 'Barri', 'Marcos', 'Oscar', 'Diego', 'Mateo', 'Pablo', 'Lucas', 'Kike', 'Ivan', 'Navarro', 'Marcelo', 'Dani', 'Alex Entrenador', 'Fernando Entrenador'];
+    const STORAGE_KEY = 'multasEquipoV1';
+    const SYNC_URL_KEY = 'multasEquipoSyncUrl';
+    const CAPTAIN_PASSWORD = 'DiegoDictador';
+    const euro = value => new Intl.NumberFormat('es-ES', { style:'currency', currency:'EUR' }).format(value);
+    const today = new Date();
+    const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0,10);
+    const dateInput = document.getElementById('trainingDate');
+    dateInput.value = localDate;
+    document.getElementById('syncUrl').value = localStorage.getItem(SYNC_URL_KEY) || '';
+
+    let records = loadRecords();
+    const tbody = document.getElementById('players');
+
+    function loadRecords() {
+      try {
+        const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        return Array.isArray(data) ? data : [];
+      } catch { return []; }
+    }
+    function escapeHTML(text) {
+      return String(text).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    }
+    function render() {
+      tbody.innerHTML = playerNames.map((name, i) => `
+        <tr>
+          <td class="player">${escapeHTML(name)}</td>
+          <td><select id="fine-${i}" aria-label="Multa de hoy para ${escapeHTML(name)}">
+            <option value="">Ninguna</option>
+            <option value="late05">Llega tarde: 0–5 min</option>
+            <option value="late515">Llega tarde: 5–15 min</option>
+            <option value="late15plus">Llega tarde: más de 15 min</option>
+            <option value="shirt">Sin camiseta</option>
+            <option value="kit">Sin equipación</option>
+            <option value="other">Otro importe</option>
+          </select></td>
+          <td id="detail-${i}">—</td>
+          <td class="fine" id="total-${i}">0,00 €</td>
+        </tr>`).join('');
+      playerNames.forEach((_, i) => {
+        document.getElementById(`fine-${i}`).addEventListener('change', () => updateRow(i));
+        updateRow(i);
+      });
+      updateGrandTotal();
+    }
+    function updateRow(i) {
+      const selection = document.getElementById(`fine-${i}`).value;
+      const details = document.getElementById(`detail-${i}`);
+      details.innerHTML = '';
+      let todayAmount = 0;
+      if (selection === 'late05') {
+        todayAmount = 0.2;
+        details.textContent = euro(todayAmount);
+      } else if (selection === 'late515') {
+        todayAmount = 0.35;
+        details.textContent = euro(todayAmount);
+      } else if (selection === 'late15plus' || selection === 'shirt' || selection === 'kit') {
+        todayAmount = selection === 'kit' ? 5 : 0.5;
+        details.textContent = euro(todayAmount);
+      } else if (selection === 'other') {
+        const amount = document.createElement('input');
+        amount.type = 'number'; amount.min = '0'; amount.step = '0.01'; amount.placeholder = '€';
+        amount.setAttribute('aria-label', 'Importe de otra multa');
+        amount.style.width = '100px';
+        amount.addEventListener('input', () => { details.dataset.amount = String(Math.max(0, Number(amount.value) || 0)); });
+        details.append(amount);
+      } else {
+        details.textContent = '—';
+      }
+      document.getElementById(`total-${i}`).textContent = euro(playerTotal(playerNames[i]) + todayAmount);
+    }
+    function playerTotal(name) {
+      return records.filter(record => record.player === name).reduce((sum, record) => sum + Number(record.amount || 0), 0);
+    }
+    function updateGrandTotal() {
+      document.getElementById('grandTotal').textContent = euro(records.reduce((sum, record) => sum + Number(record.amount || 0), 0));
+    }
+    function selectedFine(i) {
+      const type = document.getElementById(`fine-${i}`).value;
+      const fixed = { late05:['Retraso 0–5 min',0.2], late515:['Retraso 5–15 min',0.35], late15plus:['Retraso más de 15 min',0.5], shirt:['Sin camiseta',0.5], kit:['Sin equipación',5] };
+      if (fixed[type]) return { detail:fixed[type][0], amount:fixed[type][1] };
+      if (type === 'other') {
+        const input = document.querySelector(`#detail-${i} input`);
+        const amount = Math.max(0, Number(input?.value) || 0);
+        return amount > 0 ? { detail:'Otro', amount } : null;
+      }
+      return null;
+    }
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      const date = dateInput.value;
+      if (!date) { alert('Selecciona la fecha del entrenamiento.'); return; }
+      const additions = [];
+      playerNames.forEach((player, i) => {
+        const fine = selectedFine(i);
+        if (fine) additions.push({ date, player, ...fine });
+      });
+      if (!additions.length) { alert('No hay multas seleccionadas para guardar.'); return; }
+      records.push(...additions);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+      render();
+      syncRecords(additions);
+      alert(`Se han guardado ${additions.length} multa(s).`);
+    });
+    async function syncRecords(rows) {
+      const url = localStorage.getItem(SYNC_URL_KEY);
+      if (!url) return;
+      const status = document.getElementById('syncStatus');
+      status.textContent = 'Enviando multas a Google Sheets…';
+      try {
+        // Apps Script acepta este envío sin preflight CORS desde navegadores móviles.
+        await fetch(url, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({records:rows}) });
+        status.textContent = 'Envío realizado. Comprueba que las filas aparecen en la hoja.';
+      } catch (error) {
+        status.textContent = 'No se pudo enviar. Comprueba la conexión y la URL; los datos siguen guardados en este dispositivo.';
+      }
+    }
+    document.getElementById('syncBtn').addEventListener('click', () => {
+      const url = document.getElementById('syncUrl').value.trim();
+      if (!/^https:\/\/script\.google\.com\/macros\/s\/[^\s]+\/exec$/.test(url)) {
+        document.getElementById('syncStatus').textContent = 'Pega una URL válida de Apps Script que termine en /exec.';
+        return;
+      }
+      localStorage.setItem(SYNC_URL_KEY, url);
+      document.getElementById('syncStatus').textContent = 'Conexión guardada en este dispositivo. Los próximos guardados se enviarán a la hoja.';
+    });
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      const rows = [['Fecha','Jugador','Multa','Importe (€)'], ...records.map(r => [r.date,r.player,r.detail,Number(r.amount).toFixed(2).replace('.',',')])];
+      const csv = '\uFEFF' + rows.map(row => row.map(value => `"${String(value).replaceAll('"','""')}"`).join(';')).join('\r\n');
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
+      link.download = 'multas_equipo.csv'; link.click(); URL.revokeObjectURL(link.href);
+    });
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      if (!confirm('¿Seguro que quieres borrar todas las multas guardadas? Esta acción no se puede deshacer.')) return;
+      records = []; localStorage.removeItem(STORAGE_KEY); render();
+    });
+    function enterAsPlayer() {
+      document.body.classList.add('readonly');
+      document.getElementById('authScreen').hidden = true;
+    }
+    document.getElementById('playerBtn').addEventListener('click', enterAsPlayer);
+    document.getElementById('captainBtn').addEventListener('click', () => {
+      const password = document.getElementById('captainPassword').value;
+      if (password !== CAPTAIN_PASSWORD) {
+        document.getElementById('authError').textContent = 'Contraseña incorrecta.';
+        return;
+      }
+      document.body.classList.remove('readonly');
+      document.getElementById('authScreen').hidden = true;
+    });
+    document.getElementById('captainPassword').addEventListener('keydown', event => {
+      if (event.key === 'Enter') document.getElementById('captainBtn').click();
+    });
+    render();
+  </script>
+</body>
+</html>
